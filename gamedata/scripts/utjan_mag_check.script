@@ -1,3 +1,5 @@
+local common = animation_common
+
 do_ammo_check_anim = nil
 no_mag_check = nil
 
@@ -56,6 +58,7 @@ if ammo_check_mcm then
         local weaponId = weapon:id()
         local mag_data = get_mag_loaded(weaponId)
 
+        -- The following if/else section is chopped from ammo check code. It's ugly but it works so I'm keeping it
         if not (is_jammed_weapon(weapon)) and not weapon:weapon_in_grenade_mode() and currentAmmo == 0 then
             if is_supported_weapon(sec) and not mag_data then
                 no_mag_check = true
@@ -91,40 +94,35 @@ if ammo_check_mcm then
 end
 
 -- Catch the inspect weapon state switch and do the ammo check animation instead
-function actor_on_hud_animation_play(anim_table, obj)
+function mag_check_animation(anm_table, obj)
 	if not (do_ammo_check_anim == 1 and obj and obj:get_state() == 4) then return end 
 
     local sec = SYS_GetParam(0, obj:section(), "parent_section") or obj:section()
-    local anm_no_mag_check = SYS_GetParam(0, sec .. "_hud", "anm_ammo_check_no_mag")
-    local anm_check_empty = SYS_GetParam(0, sec .. "_hud", "anm_ammo_check_empty")
+    anm_table.anm_name = "anm_ammo_check"
 
-    if no_mag_check and anm_no_mag_check then
-        anim_table.anm_name = "anm_ammo_check_no_mag"
-        anim_table.anm_speed = parse_list(ini_sys, sec, "anm_ammo_check_no_mag")[3] or anim_table.anm_speed
-
-        local snd_no_mag_check = SYS_GetParam(0, sec ,"snd_ammo_check_no_mag")
-        if snd_no_mag_check then
-            utils_obj.play_sound(snd_no_mag_check)
-        end
-    elseif anm_check_empty and obj:get_ammo_in_magazine() == 0 then
-        anim_table.anm_name = "anm_ammo_check_empty"
-        anim_table.anm_speed = parse_list(ini_sys, sec, "anm_ammo_check_empty")[3] or anim_table.anm_speed
-
-        local snd_ammo_check_empty = SYS_GetParam(0, sec ,"snd_ammo_check_empty")
-        if snd_ammo_check_empty then
-            utils_obj.play_sound(snd_ammo_check_empty)
-        end
-    else
-        anim_table.anm_name = "anm_ammo_check"
-        anim_table.anm_speed = parse_list(ini_sys, sec, "anm_ammo_check")[3] or anim_table.anm_speed
-
-        local snd_ammo_check = SYS_GetParam(0, sec,"snd_ammo_check")
-        if snd_ammo_check then
-            utils_obj.play_sound(snd_ammo_check)
+    for i, table in ipairs(mag_check_variants) do
+        if common.has_animation(sec, "anm_ammo_check" .. table.variant) and table.functor(obj) then
+            anm_table.anm_name = "anm_ammo_check" .. table.variant
+            do_ammo_check_anim = 2
+            return
         end
     end
+end
+common.add_anim_mutator(mag_check_animation, 0.1)
 
-    do_ammo_check_anim = 2
+mag_check_variants = {
+    {variant = "_empty_aim_jammed", functor = function(obj) return axr_main.weapon_is_zoomed and (obj:get_ammo_in_magazine() == 0) and is_jammed(obj) end},
+    {variant = "_empty_jammed", functor = function(obj) return (obj:get_ammo_in_magazine() == 0) and is_jammed(obj) end},
+    {variant = "_aim_jammed", functor = function(obj) return axr_main.weapon_is_zoomed and is_jammed(obj) end},
+    {variant = "_jammed", functor = function(obj) return is_jammed(obj) end},
+    {variant = "_no_mag", functor = function(obj) return no_mag_check end},
+    {variant = "_empty_aim", functor = function(obj) return axr_main.weapon_is_zoomed and (obj:get_ammo_in_magazine() == 0) end},
+    {variant = "_aim", functor = function(obj) return axr_main.weapon_is_zoomed end},
+    {variant = "_empty", functor = function(obj) return obj:get_ammo_in_magazine() == 0 end},
+}
+
+function is_jammed(obj)
+    return is_jammed_weapon(obj) or arti_jamming and arti_jamming.get_jammed(obj:id()) or obj:get_state() == 3
 end
 
 function on_game_start()
@@ -137,6 +135,4 @@ function on_game_start()
         get_mag_loaded = null_function
         is_jammed_weapon = null_function
     end
-
-    RegisterScriptCallback("actor_on_hud_animation_play", actor_on_hud_animation_play)
 end
