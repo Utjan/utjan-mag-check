@@ -1,7 +1,6 @@
 local common = animation_common
 
 do_ammo_check_anim = nil
-no_mag_check = nil
 
 if ammo_check_mcm then
     base_check_Ammo = ammo_check_mcm.check_Ammo
@@ -55,39 +54,11 @@ if ammo_check_mcm then
             ammo_check_mcm.on_option_change()
         end
 
-        local weaponId = weapon:id()
-        local mag_data = get_mag_loaded(weaponId)
-
-        -- The following if/else section is chopped from ammo check code. It's ugly but it works so I'm keeping it
-        if not (is_jammed_weapon(weapon)) and not weapon:weapon_in_grenade_mode() and currentAmmo == 0 then
-            if is_supported_weapon(sec) and not mag_data then
-                no_mag_check = true
-            end
-        else
-            local max_ammo = 0
-            if not mag_data and is_supported_weapon(sec) then
-                currentAmmo = 1
-                max_ammo = 10
-            elseif is_supported_weapon(sec) then
-                max_ammo = SYS_GetParam(2, mag_data.section, "max_mag_size")
-            else
-                max_ammo = SYS_GetParam(2, sec, "ammo_mag_size")
-            end
-            local curAmmoPerc = currentAmmo / max_ammo
-
-            if not (currentAmmo == max_ammo + 1) and not (curAmmoPerc > 1) and not (currentAmmo == 1 and SYS_GetParam(2, sec, "ammo_mag_size", 0) == 2) then
-                if currentAmmo == 1 and not mag_data and is_supported_weapon(sec) then
-                    no_mag_check = true
-                end
-            end
-        end
-
         do_ammo_check_anim = 1
         weapon:switch_state(4)
 
         CreateTimeEvent("mag_check", "mag_check_reset", 3, function() 
             do_ammo_check_anim = nil
-            no_mag_check = nil
             return true
         end) 
     end
@@ -97,42 +68,7 @@ end
 function mag_check_animation(anm_table, obj)
 	if not (do_ammo_check_anim == 1 and obj and obj:get_state() == 4) then return end 
 
-    local sec = SYS_GetParam(0, obj:section(), "parent_section") or obj:section()
     anm_table.anm_name = "anm_ammo_check"
-
-    for i, table in ipairs(mag_check_variants) do
-        if common.has_animation(sec, "anm_ammo_check" .. table.variant) and table.functor(obj) then
-            anm_table.anm_name = "anm_ammo_check" .. table.variant
-            do_ammo_check_anim = 2
-            return
-        end
-    end
+    do_ammo_check_anim = 2
 end
 common.add_anim_mutator(mag_check_animation, 0.1)
-
-mag_check_variants = {
-    {variant = "_empty_aim_jammed", functor = function(obj) return axr_main.weapon_is_zoomed and (obj:get_ammo_in_magazine() == 0) and is_jammed(obj) end},
-    {variant = "_empty_jammed", functor = function(obj) return (obj:get_ammo_in_magazine() == 0) and is_jammed(obj) end},
-    {variant = "_aim_jammed", functor = function(obj) return axr_main.weapon_is_zoomed and is_jammed(obj) end},
-    {variant = "_jammed", functor = function(obj) return is_jammed(obj) end},
-    {variant = "_no_mag", functor = function(obj) return no_mag_check end},
-    {variant = "_empty_aim", functor = function(obj) return axr_main.weapon_is_zoomed and (obj:get_ammo_in_magazine() == 0) end},
-    {variant = "_aim", functor = function(obj) return axr_main.weapon_is_zoomed end},
-    {variant = "_empty", functor = function(obj) return obj:get_ammo_in_magazine() == 0 end},
-}
-
-function is_jammed(obj)
-    return is_jammed_weapon(obj) or arti_jamming and arti_jamming.get_jammed(obj:id()) or obj:get_state() == 3
-end
-
-function on_game_start()
-    if magazine_binder then
-        get_mag_loaded = magazine_binder.get_mag_loaded
-        is_supported_weapon = magazine_binder.is_supported_weapon
-        is_jammed_weapon = magazines.is_jammed_weapon
-    else
-        is_supported_weapon = null_function
-        get_mag_loaded = null_function
-        is_jammed_weapon = null_function
-    end
-end
