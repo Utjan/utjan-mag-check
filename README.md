@@ -1,13 +1,16 @@
 # utjan-mag-check
 Allows animators to make mag check animations
 
-My previously implementation of this was an edit of the Ammo Check script, but this is now it's own script helping avoid load order or conflict issues.
+My previous implementation of this was an edit of the Ammo Check script, but mag check is now it's own script which avoids load order or conflict issues.
 Still requires Ammo Check from Mags Redux or Standalone.
 
 Now uses Aoldri's Common Animations to automate mag check variations (jams, empty mag, aiming)
 
-### (Project is still a work in progress)
+Uses Unlocalizer feature of Modded Exes to access ammo check script data. The script will fall back to a less flexible workaround if it can't use Unlocalizer.
 
+Does not work if an animation mod has installed the old mag check script. An error will show in the console if it's detected.
+
+## How to use
 Here is an example of mag check animations added to the hud section of your weapon:
 
 >anm_ammo_check                           = barry_magcheck_svu_hands, barry_magcheck_svu

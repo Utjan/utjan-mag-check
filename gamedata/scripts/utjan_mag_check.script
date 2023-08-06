@@ -5,7 +5,13 @@ do_ammo_check_anim = nil
 if ammo_check_mcm then
     base_check_Ammo = ammo_check_mcm.check_Ammo
     function ammo_check_mcm.check_Ammo()
-        if ammo_check_mcm.actor_on_hud_animation_play or busy_hands_fix then
+        if busy_hands_fix then
+            base_check_Ammo()
+            return
+        end
+
+        if ammo_check_mcm.actor_on_hud_animation_play then
+            printf("!Old mag check script (ammo_check_mcm) detected. Remove it to get full features of mag checks")
             base_check_Ammo()
             return
         end
@@ -68,7 +74,21 @@ end
 function mag_check_animation(anm_table, obj)
 	if not (do_ammo_check_anim == 1 and obj and obj:get_state() == 4) then return end 
 
-    anm_table.anm_name = "anm_ammo_check"
+    local is_supported, has_mag_data
+    if magazine_binder then
+        is_supported = magazine_binder.is_supported_weapon(obj:section())
+        has_mag_data = magazine_binder.get_mag_loaded(obj:id())
+    end
+    if is_supported and not has_mag_data and common.has_animation(obj:section(), "anm_ammo_check_no_mag") then
+        anm_table.anm_name = "anm_ammo_check_no_mag"
+    else
+        anm_table.anm_name = "anm_ammo_check"
+    end
     do_ammo_check_anim = 2
 end
-common.add_anim_mutator(mag_check_animation, 0.1)
+
+if ammo_check_mcm.actor_on_hud_animation_play then
+    printf("!Old mag check script (ammo_check_mcm) detected. Remove it to get full features of mag checks")
+else
+    common.add_anim_mutator(mag_check_animation, 0.1)
+end
