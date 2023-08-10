@@ -1,5 +1,5 @@
 # utjan-mag-check
-Allows animators to make mag check animations
+Allows animators to show mag check animations
 
 My previous implementation of this was an edit of the Ammo Check script, but mag check is now it's own script which avoids load order or conflict issues.
 Still requires Ammo Check from Mags Redux or Standalone.

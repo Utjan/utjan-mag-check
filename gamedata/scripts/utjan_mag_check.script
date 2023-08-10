@@ -38,7 +38,8 @@ if ammo_check_mcm then
         end
 
         local sec = SYS_GetParam(0, weapon:section(), "parent_section") or weapon:section()
-        local anm_ammo_check = SYS_GetParam(0, sec .. "_hud", "anm_ammo_check") 
+        local hud_sec = SYS_GetParam(0, sec, "hud")
+        local anm_ammo_check = SYS_GetParam(0, hud_sec, "anm_ammo_check") 
         if not anm_ammo_check then
             base_check_Ammo()
             return
