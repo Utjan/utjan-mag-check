@@ -5,7 +5,7 @@ do_ammo_check_anim = nil
 if ammo_check_mcm then
     base_check_Ammo = ammo_check_mcm.check_Ammo
     function ammo_check_mcm.check_Ammo()
-        if busy_hands_fix then
+        if ammo_check_mcm.busy_hands_fix then
             base_check_Ammo()
             return
         end
@@ -36,10 +36,8 @@ if ammo_check_mcm then
             base_check_Ammo()
             return
         end
-
-        local sec = SYS_GetParam(0, weapon:section(), "parent_section") or weapon:section()
-        local hud_sec = SYS_GetParam(0, sec, "hud")
-        local anm_ammo_check = SYS_GetParam(0, hud_sec, "anm_ammo_check") 
+        
+        local anm_ammo_check = common.has_animation(weapon:section(), "anm_ammo_check")
         if not anm_ammo_check then
             base_check_Ammo()
             return
