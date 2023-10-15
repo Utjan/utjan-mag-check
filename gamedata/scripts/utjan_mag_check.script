@@ -1,6 +1,7 @@
 local common = animation_common
 
 do_ammo_check_anim = nil
+wpn_checking, det_active = nil
 
 if ammo_check_mcm then
     base_check_Ammo = ammo_check_mcm.check_Ammo
@@ -61,29 +62,45 @@ if ammo_check_mcm then
 
         do_ammo_check_anim = 1
         weapon:switch_state(4)
+        det_active = db.actor:active_detector() or nil
+        if det_active then
+            det_active:switch_state(2)
+        end
 
-        CreateTimeEvent("mag_check", "mag_check_reset", 3, function() 
+--[[         CreateTimeEvent("mag_check", "mag_check_reset", 3, function() 
             do_ammo_check_anim = nil
             return true
-        end) 
+        end)  ]]
     end
 end
 
 -- Catch the inspect weapon state switch and do the ammo check animation instead
 function mag_check_animation(anm_table, obj)
-	if not (do_ammo_check_anim == 1 and obj and obj:get_state() == 4) then return end 
+    if wpn_checking and obj and wpn_checking:id() == obj:id() and do_ammo_check_anim == 2 then
+        wpn_checking = nil
+        do_ammo_check_anim = nil
 
-    local is_supported, has_mag_data
-    if magazine_binder then
-        is_supported = magazine_binder.is_supported_weapon(obj:section())
-        has_mag_data = magazine_binder.get_mag_loaded(obj:id())
+        if det_active then
+            db.actor:show_detector(true)
+        end
+        det_active = nil
     end
-    if is_supported and not has_mag_data and common.has_animation(obj:section(), "anm_ammo_check_no_mag") then
-        anm_table.anm_name = "anm_ammo_check_no_mag"
-    else
-        anm_table.anm_name = "anm_ammo_check"
+
+	if do_ammo_check_anim == 1 and obj and obj:get_state() == 4 then
+        wpn_checking = obj
+
+        local is_supported, has_mag_data
+        if magazine_binder then
+            is_supported = magazine_binder.is_supported_weapon(obj:section())
+            has_mag_data = magazine_binder.get_mag_loaded(obj:id())
+        end
+        if is_supported and not has_mag_data and common.has_animation(obj:section(), "anm_ammo_check_no_mag") then
+            anm_table.anm_name = "anm_ammo_check_no_mag"
+        else
+            anm_table.anm_name = "anm_ammo_check"
+        end
+        do_ammo_check_anim = 2
     end
-    do_ammo_check_anim = 2
 end
 
 if ammo_check_mcm.actor_on_hud_animation_play then
