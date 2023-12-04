@@ -103,7 +103,7 @@ function mag_check_animation(anm_table, obj)
     end
 end
 
-if ammo_check_mcm.actor_on_hud_animation_play then
+if ammo_check_mcm and ammo_check_mcm.actor_on_hud_animation_play then
     printf("!Old mag check script (ammo_check_mcm) detected. Remove it to get full features of mag checks")
 else
     common.add_anim_mutator(mag_check_animation, 0.1)
